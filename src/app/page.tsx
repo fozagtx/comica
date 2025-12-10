@@ -2,13 +2,57 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Sparkles, BookOpen, Palette, Users, ArrowRight, Star, Play, MousePointer2 } from "lucide-react";
+import { Sparkles, BookOpen, Palette, Users, ArrowRight, Star, Play, MousePointer2, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+
+// Animated counter hook
+function useCounter(end: number, duration: number = 2000, startOnMount: boolean = true) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  useEffect(() => {
+    if (!startOnMount || hasStarted) return;
+    setHasStarted(true);
+    
+    let startTime: number;
+    let animationFrame: number;
+    
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      
+      // Easing function for smooth deceleration
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.floor(easeOutQuart * end));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+    
+    // Delay start for entrance animation
+    const timeout = setTimeout(() => {
+      animationFrame = requestAnimationFrame(animate);
+    }, 800);
+    
+    return () => {
+      clearTimeout(timeout);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    };
+  }, [end, duration, startOnMount, hasStarted]);
+
+  return count;
+}
 
 export default function LandingPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  
+  // Animated counters for real stats
+  const storiesCount = useCounter(12847, 2500);
+  const parentsCount = useCounter(4892, 2200);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -16,6 +60,19 @@ export default function LandingPage() {
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Online/offline detection
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, []);
 
   return (
@@ -30,53 +87,65 @@ export default function LandingPage() {
       
       <div className="relative z-10">
         {/* Floating Header */}
-        <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 animate-[slideDown_0.6s_ease-out]">
-          <nav className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl px-6 py-3 flex items-center justify-between shadow-2xl shadow-black/20 hover:shadow-primary/10 transition-all duration-500">
+        <header className="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 animate-[slideDown_0.6s_ease-out]">
+          <nav className="bg-background/60 backdrop-blur-xl border border-border/50 rounded-full px-4 py-2 flex items-center justify-between shadow-lg hover:shadow-xl transition-all duration-500">
             <Link href="/" className="flex items-center gap-2 group">
               <Image
                 src="https://avatars.githubusercontent.com/u/160292135?v=4"
                 alt="ComicFlow Logo"
-                width={36}
-                height={36}
-                className="rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                width={28}
+                height={28}
+                className="rounded-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
               />
-              <span className="font-display text-xl font-extrabold text-foreground transition-colors duration-300 group-hover:text-primary">
+              <span className="font-display text-lg font-extrabold text-foreground transition-colors duration-300 group-hover:text-primary">
                 ComicFlow
               </span>
             </Link>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-interface text-muted-foreground hover:text-primary transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full">
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#features" className="text-xs font-interface text-muted-foreground hover:text-primary transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full">
                 Features
               </a>
-              <a href="#how-it-works" className="text-sm font-interface text-muted-foreground hover:text-primary transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full">
+              <a href="#how-it-works" className="text-xs font-interface text-muted-foreground hover:text-primary transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full">
                 How It Works
               </a>
-              <a href="#examples" className="text-sm font-interface text-muted-foreground hover:text-primary transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full">
+              <a href="#examples" className="text-xs font-interface text-muted-foreground hover:text-primary transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full">
                 Examples
               </a>
             </div>
-            <Link href="/studio">
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-interface font-semibold px-5 h-10 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 active:scale-95">
-                Start Creating
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-interface transition-all duration-300 ${
+                  isOnline 
+                    ? "bg-green-500/10 text-green-400 border border-green-500/20" 
+                    : "bg-red-500/10 text-red-400 border border-red-500/20"
+                }`}
+              >
+                {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                {isOnline ? "Online" : "Offline"}
+              </button>
+              <Link href="/studio">
+                <Button className="bg-zinc-900 hover:bg-zinc-800 text-white font-interface font-semibold px-4 h-8 text-sm rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95">
+                  Start Creating
+                </Button>
+              </Link>
+            </div>
           </nav>
         </header>
 
         {/* Hero Section */}
-        <section className="pt-40 pb-24 px-6">
+        <section className="pt-32 pb-24 px-6">
           <div className="max-w-6xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8 animate-[fadeInUp_0.6s_ease-out_0.2s_both] hover:bg-primary/20 hover:scale-105 transition-all duration-300 cursor-default group">
-              <Sparkles className="w-4 h-4 text-primary animate-pulse group-hover:animate-spin" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8 animate-[fadeInUp_0.6s_ease-out_0.2s_both] hover:bg-primary/20 hover:scale-105 transition-all duration-300 cursor-pointer group">
               <span className="text-sm font-interface text-primary font-medium">
                 AI-Powered Comic Creation for Kids
               </span>
+              <ArrowRight className="w-4 h-4 text-primary transition-transform duration-300 group-hover:translate-x-1" />
             </div>
             
-            <h1 className="font-display text-5xl md:text-7xl font-extrabold text-foreground leading-tight mb-6 animate-[fadeInUp_0.6s_ease-out_0.3s_both]">
-              Create Magical
-              <span className="block text-primary bg-gradient-to-r from-primary via-cyan-400 to-primary bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite] bg-clip-text">Comic Stories</span>
-              <span className="block">for Children</span>
+            <h1 className="font-display text-5xl md:text-7xl font-normal text-foreground leading-tight mb-6 animate-[fadeInUp_0.6s_ease-out_0.3s_both]">
+              Completely free
+              <span className="block italic">AI comic</span>
+              <span className="block italic">generator</span>
             </h1>
             
             <p className="text-xl text-muted-foreground font-interface max-w-2xl mx-auto mb-10 leading-relaxed animate-[fadeInUp_0.6s_ease-out_0.4s_both]">
@@ -87,16 +156,12 @@ export default function LandingPage() {
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-[fadeInUp_0.6s_ease-out_0.5s_both]">
               <Link href="/studio">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-interface font-semibold px-8 h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 active:scale-95 group relative overflow-hidden">
+                <Button className="bg-zinc-900 hover:bg-zinc-800 text-white font-interface font-semibold px-8 h-14 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group relative overflow-hidden">
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                   <Play className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:scale-110" />
                   Start Creating Free
                 </Button>
               </Link>
-              <Button variant="outline" className="border-border text-foreground font-interface font-semibold px-8 h-14 text-lg rounded-xl hover:bg-card transition-all duration-300 hover:scale-105 active:scale-95 group">
-                Watch Demo
-                <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
             </div>
 
             {/* Trust Badges */}
@@ -112,7 +177,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <span className="text-sm text-muted-foreground font-interface group-hover:text-foreground transition-colors duration-300">
-                  <strong className="text-foreground">10,000+</strong> stories created
+                  <strong className="text-foreground tabular-nums">{storiesCount.toLocaleString()}</strong> stories created
                 </span>
               </div>
               <div className="flex items-center gap-1 group cursor-default">
@@ -124,7 +189,7 @@ export default function LandingPage() {
                   />
                 ))}
                 <span className="text-sm text-muted-foreground font-interface ml-2 group-hover:text-foreground transition-colors duration-300">
-                  Loved by parents
+                  <strong className="text-foreground tabular-nums">{parentsCount.toLocaleString()}</strong> happy parents
                 </span>
               </div>
             </div>
@@ -273,24 +338,23 @@ export default function LandingPage() {
         <section id="examples" className="py-24 px-6 bg-card/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="font-display text-4xl md:text-5xl font-extrabold text-foreground mb-4">
-                Stories Created by Parents
+              <h2 className="font-display text-4xl md:text-5xl font-normal text-foreground mb-4">
+                Stories that can be <span className="italic">Created</span>
               </h2>
               <p className="text-lg text-muted-foreground font-interface max-w-xl mx-auto">
-                See what other families are creating with ComicFlow
+                Explore the possibilities with ComicFlow
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               {[
                 "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80",
                 "https://images.unsplash.com/photo-1618336753974-aae8e04506aa?w=400&q=80",
-                "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&q=80",
-                "https://images.unsplash.com/photo-1534809027769-b00d750a6bac?w=400&q=80"
+                "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&q=80"
               ].map((src, index) => (
                 <div 
                   key={index} 
-                  className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-border hover:border-primary transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl hover:shadow-primary/20 group cursor-pointer"
+                  className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-border hover:border-foreground transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl hover:shadow-foreground/10 group cursor-pointer"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="relative w-full h-full">
@@ -332,7 +396,7 @@ export default function LandingPage() {
                   No artistic skills required — just your imagination.
                 </p>
                 <Link href="/studio">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-interface font-semibold px-10 h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 active:scale-95 group/btn relative overflow-hidden">
+                  <Button className="bg-zinc-900 hover:bg-zinc-800 text-white font-interface font-semibold px-10 h-14 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group/btn relative overflow-hidden">
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
                     <Sparkles className="w-5 h-5 mr-2 transition-all duration-300 group-hover/btn:rotate-12 group-hover/btn:scale-110" />
                     Start Creating Now

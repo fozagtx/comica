@@ -11,14 +11,9 @@ import {
   Wand2,
   Users,
   Palette,
-  RefreshCw,
-  Pencil,
-  AlignLeft,
-  BarChart3,
   MessageCircle,
   Hexagon,
   Clock,
-  Zap,
   Download,
   Loader2,
   ImageIcon,
@@ -28,7 +23,6 @@ import {
   X,
 } from "lucide-react";
 
-type TabType = "prompt" | "recreate" | "edit" | "title" | "analyze";
 type ImageSize = "1024x1024" | "1792x1024" | "1024x1792";
 type ImageQuality = "standard" | "hd";
 type ImageStyle = "vivid" | "natural";
@@ -41,11 +35,9 @@ interface GeneratedImage {
 }
 
 export default function StudioPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("prompt");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [credits] = useState(40);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
 
@@ -53,14 +45,6 @@ export default function StudioPage() {
   const [imageSize, setImageSize] = useState<ImageSize>("1024x1024");
   const [imageQuality, setImageQuality] = useState<ImageQuality>("standard");
   const [imageStyle, setImageStyle] = useState<ImageStyle>("vivid");
-
-  const tabs = [
-    { id: "prompt" as TabType, label: "Prompt", icon: Sparkles },
-    { id: "recreate" as TabType, label: "Recreate", icon: RefreshCw },
-    { id: "edit" as TabType, label: "Edit", icon: Pencil },
-    { id: "title" as TabType, label: "Title", icon: AlignLeft },
-    { id: "analyze" as TabType, label: "Analyze", icon: BarChart3, isNew: true },
-  ];
 
   const sizeOptions = [
     { value: "1024x1024" as ImageSize, label: "Square", icon: Square },
@@ -188,62 +172,15 @@ export default function StudioPage() {
               </Button>
             </div>
 
-            {/* Right - Credits */}
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-[#22F2B1]/20 flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 text-[#22F2B1]" />
-              </div>
-              <span className="text-sm">
-                <span className="font-semibold text-[#E5E7EB]">{credits}</span>
-                <span className="text-[#9CA3AF]"> Credits</span>
-              </span>
-              <span className="text-xs text-[#6B7280] hidden sm:inline">
-                left before trial ends
-              </span>
-            </div>
+            {/* Right - Empty spacer for balance */}
+            <div className="w-[100px]" />
           </div>
         </header>
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col lg:flex-row gap-6 px-4 py-6 max-w-7xl mx-auto w-full">
           {/* Left Panel - Prompt Input */}
-          <div className="flex-1 flex flex-col">
-            {/* Get Started Title & Tabs Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h2 className="text-[#22F2B1] font-medium text-sm">Get Started</h2>
-
-              {/* Tabs */}
-              <div className="flex items-center gap-1 flex-wrap">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`
-                        relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-medium
-                        transition-all duration-200
-                        ${
-                          isActive
-                            ? "bg-[#22F2B1] text-[#0A0A0A] tab-active-glow"
-                            : "bg-transparent border border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB]"
-                        }
-                      `}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      {tab.isNew && (
-                        <Badge className="absolute -top-2 -right-1 bg-[#22F2B1] text-[#0A0A0A] text-[10px] px-1.5 py-0 font-semibold">
-                          NEW
-                        </Badge>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+          <div className="flex-1 flex flex-col justify-center">
             {/* Prompt Input Card */}
             <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-4">
               {/* Textarea */}
@@ -305,7 +242,7 @@ export default function StudioPage() {
                     }
                   `}
                 >
-                  HD {imageQuality === "hd" && ""}
+                  HD
                 </button>
 
                 {/* Style Toggle */}
@@ -470,7 +407,7 @@ export default function StudioPage() {
             {/* Image Gallery */}
             {generatedImages.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
-                {generatedImages.map((image, index) => (
+                {generatedImages.map((image) => (
                   <button
                     key={image.timestamp}
                     onClick={() => setSelectedImage(image)}

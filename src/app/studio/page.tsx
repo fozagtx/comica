@@ -139,177 +139,26 @@ export default function StudioPage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col lg:flex-row gap-6 px-4 py-6 max-w-7xl mx-auto w-full">
-          {/* Left Panel - Prompt Input */}
-          <div className="flex-1 flex flex-col justify-center">
-            {/* Prompt Input Card */}
-            <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-4">
-              {/* Textarea */}
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe what you want to create... Be specific about style, colors, mood, and composition."
-                className="
-                  min-h-[140px] bg-transparent border-none resize-none
-                  text-[#E5E7EB] placeholder:text-[#6B7280]
-                  focus-visible:ring-0 focus-visible:ring-offset-0
-                  text-base leading-relaxed
-                "
-              />
+        <main className="flex-1 flex flex-col items-center px-4 py-6 max-w-2xl mx-auto w-full">
 
-              {/* Image Options */}
-              <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-[#1E1E1E]">
-                {/* Size Options */}
-                <div className="flex items-center gap-1 bg-[#1E1E1E]/50 rounded-full p-1">
-                  {sizeOptions.map((option) => {
-                    const Icon = option.icon;
-                    const isActive = imageSize === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => setImageSize(option.value)}
-                        className={`
-                          flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-                          transition-all duration-200
-                          ${
-                            isActive
-                              ? "bg-[#22F2B1] text-[#0A0A0A]"
-                              : "text-[#9CA3AF] hover:text-[#E5E7EB]"
-                          }
-                        `}
-                        title={option.label}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{option.label}</span>
-                      </button>
-                    );
-                  })}
+          {/* Generated Image Preview - Above Input */}
+          <div className="w-full mb-6">
+            {isGenerating ? (
+              /* Loading State */
+              <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-8 flex flex-col items-center justify-center text-center aspect-square max-w-md mx-auto">
+                <div className="relative">
+                  <div className="w-20 h-20 border-4 border-[#1E1E1E] border-t-[#22F2B1] rounded-full animate-spin" />
+                  <Sparkles className="w-8 h-8 text-[#22F2B1] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                 </div>
-
-                {/* Quality Toggle */}
-                <button
-                  onClick={() =>
-                    setImageQuality((prev) =>
-                      prev === "standard" ? "hd" : "standard"
-                    )
-                  }
-                  className={`
-                    px-3 py-1.5 rounded-full text-xs font-medium border
-                    transition-all duration-200
-                    ${
-                      imageQuality === "hd"
-                        ? "bg-[#22F2B1]/20 border-[#22F2B1] text-[#22F2B1]"
-                        : "border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E]"
-                    }
-                  `}
-                >
-                  HD
-                </button>
-
-                {/* Style Toggle */}
-                <button
-                  onClick={() =>
-                    setImageStyle((prev) =>
-                      prev === "vivid" ? "natural" : "vivid"
-                    )
-                  }
-                  className={`
-                    px-3 py-1.5 rounded-full text-xs font-medium border
-                    transition-all duration-200
-                    ${
-                      imageStyle === "vivid"
-                        ? "bg-[#22F2B1]/20 border-[#22F2B1] text-[#22F2B1]"
-                        : "border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E]"
-                    }
-                  `}
-                >
-                  {imageStyle === "vivid" ? "Vivid" : "Natural"}
-                </button>
-              </div>
-
-              {/* Footer Controls */}
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#1E1E1E]">
-                {/* Left - Personas & Styles */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Personas
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
-                  >
-                    <Palette className="w-4 h-4 mr-2" />
-                    Styles
-                  </Button>
-                </div>
-
-                {/* Right - Mic & Enhance */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-transparent border-[#1E1E1E] text-[#6B7280] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full w-9 h-9"
-                  >
-                    <Mic className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!prompt.trim()}
-                    className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#22F2B1] hover:text-[#22F2B1] hover:bg-[#22F2B1]/10 rounded-full px-4 h-9 disabled:opacity-50"
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Enhance Prompt
-                  </Button>
+                <p className="text-[#22F2B1] font-medium mt-6">Generating your image...</p>
+                <p className="text-[#6B7280] text-sm mt-2">This may take a few seconds</p>
+                <div className="w-48 h-1 bg-[#1E1E1E] rounded-full mt-4 overflow-hidden">
+                  <div className="h-full bg-[#22F2B1] rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]" style={{ width: '60%' }} />
                 </div>
               </div>
-            </div>
-
-            {/* Generate Button */}
-            <div className="flex justify-center mt-6">
-              <Button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating}
-                className={`
-                  bg-[#22F2B1] hover:bg-[#1AD9A0] text-[#0A0A0A] font-semibold
-                  rounded-full px-8 py-3 h-12 text-base
-                  transition-all duration-300
-                  hover:scale-105 active:scale-95
-                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                  ${!isGenerating && prompt.trim() ? "glow-green-strong animate-[pulse-glow_2s_ease-in-out_infinite]" : ""}
-                `}
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-5 h-5 mr-2" />
-                )}
-                {isGenerating ? "Generating..." : "Generate"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Right Panel - Generated Images */}
-          <div className="lg:w-[480px] flex flex-col">
-            <h3 className="text-[#E5E7EB] font-medium text-sm mb-4 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-[#22F2B1]" />
-              Generated Images
-              {generatedImages.length > 0 && (
-                <Badge className="bg-[#22F2B1]/20 text-[#22F2B1] text-xs">
-                  {generatedImages.length}
-                </Badge>
-              )}
-            </h3>
-
-            {/* Selected Image Preview */}
-            {selectedImage ? (
-              <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl overflow-hidden mb-4">
+            ) : selectedImage ? (
+              /* Selected Image Preview */
+              <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl overflow-hidden max-w-md mx-auto">
                 <div className="relative aspect-square">
                   <Image
                     src={selectedImage.url}
@@ -331,9 +180,7 @@ export default function StudioPage() {
                   </p>
                   <Button
                     size="sm"
-                    onClick={() =>
-                      handleDownload(selectedImage.url, selectedImage.prompt)
-                    }
+                    onClick={() => handleDownload(selectedImage.url, selectedImage.prompt)}
                     className="w-full bg-[#1E1E1E] hover:bg-[#2E2E2E] text-[#E5E7EB] rounded-full"
                   >
                     <Download className="w-4 h-4 mr-2" />
@@ -341,8 +188,9 @@ export default function StudioPage() {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-8 flex flex-col items-center justify-center text-center mb-4 aspect-square">
+            ) : generatedImages.length === 0 ? (
+              /* Empty State */
+              <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-8 flex flex-col items-center justify-center text-center aspect-square max-w-md mx-auto">
                 <div className="w-16 h-16 bg-[#1E1E1E] rounded-full flex items-center justify-center mb-4">
                   <ImageIcon className="w-8 h-8 text-[#6B7280]" />
                 </div>
@@ -353,17 +201,17 @@ export default function StudioPage() {
                   Enter a prompt and click Generate
                 </p>
               </div>
-            )}
+            ) : null}
 
-            {/* Image Gallery */}
-            {generatedImages.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {generatedImages.map((image) => (
+            {/* Image Gallery Thumbnails */}
+            {generatedImages.length > 0 && !isGenerating && (
+              <div className="flex justify-center gap-2 mt-4">
+                {generatedImages.slice(0, 6).map((image) => (
                   <button
                     key={image.timestamp}
                     onClick={() => setSelectedImage(image)}
                     className={`
-                      relative aspect-square rounded-lg overflow-hidden border-2 transition-all
+                      relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-all
                       ${
                         selectedImage?.timestamp === image.timestamp
                           ? "border-[#22F2B1]"
@@ -380,8 +228,165 @@ export default function StudioPage() {
                     />
                   </button>
                 ))}
+                {generatedImages.length > 6 && (
+                  <div className="w-12 h-12 rounded-lg bg-[#1E1E1E] flex items-center justify-center text-[#9CA3AF] text-xs">
+                    +{generatedImages.length - 6}
+                  </div>
+                )}
               </div>
             )}
+          </div>
+
+          {/* Prompt Input Card */}
+          <div className="w-full bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-4">
+            {/* Textarea */}
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe what you want to create... Be specific about style, colors, mood, and composition."
+              className="
+                min-h-[100px] bg-transparent border-none resize-none
+                text-[#E5E7EB] placeholder:text-[#6B7280]
+                focus-visible:ring-0 focus-visible:ring-offset-0
+                text-base leading-relaxed
+              "
+            />
+
+            {/* Image Options */}
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-[#1E1E1E]">
+              {/* Size Options */}
+              <div className="flex items-center gap-1 bg-[#1E1E1E]/50 rounded-full p-1">
+                {sizeOptions.map((option) => {
+                  const Icon = option.icon;
+                  const isActive = imageSize === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => setImageSize(option.value)}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                        transition-all duration-200
+                        ${
+                          isActive
+                            ? "bg-[#22F2B1] text-[#0A0A0A]"
+                            : "text-[#9CA3AF] hover:text-[#E5E7EB]"
+                        }
+                      `}
+                      title={option.label}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quality Toggle */}
+              <button
+                onClick={() =>
+                  setImageQuality((prev) =>
+                    prev === "standard" ? "hd" : "standard"
+                  )
+                }
+                className={`
+                  px-3 py-1.5 rounded-full text-xs font-medium border
+                  transition-all duration-200
+                  ${
+                    imageQuality === "hd"
+                      ? "bg-[#22F2B1]/20 border-[#22F2B1] text-[#22F2B1]"
+                      : "border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E]"
+                  }
+                `}
+              >
+                HD
+              </button>
+
+              {/* Style Toggle */}
+              <button
+                onClick={() =>
+                  setImageStyle((prev) =>
+                    prev === "vivid" ? "natural" : "vivid"
+                  )
+                }
+                className={`
+                  px-3 py-1.5 rounded-full text-xs font-medium border
+                  transition-all duration-200
+                  ${
+                    imageStyle === "vivid"
+                      ? "bg-[#22F2B1]/20 border-[#22F2B1] text-[#22F2B1]"
+                      : "border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E]"
+                  }
+                `}
+              >
+                {imageStyle === "vivid" ? "Vivid" : "Natural"}
+              </button>
+            </div>
+
+            {/* Footer Controls */}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#1E1E1E]">
+              {/* Left - Personas & Styles */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Personas
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Styles
+                </Button>
+              </div>
+
+              {/* Right - Mic & Enhance */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-transparent border-[#1E1E1E] text-[#6B7280] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full w-9 h-9"
+                >
+                  <Mic className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!prompt.trim()}
+                  className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#22F2B1] hover:text-[#22F2B1] hover:bg-[#22F2B1]/10 rounded-full px-4 h-9 disabled:opacity-50"
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Enhance Prompt
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <div className="flex justify-center mt-6">
+            <Button
+              onClick={handleGenerate}
+              disabled={!prompt.trim() || isGenerating}
+              className={`
+                bg-[#22F2B1] hover:bg-[#1AD9A0] text-[#0A0A0A] font-semibold
+                rounded-full px-8 py-3 h-12 text-base
+                transition-all duration-300
+                hover:scale-105 active:scale-95
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                ${!isGenerating && prompt.trim() ? "glow-green-strong animate-[pulse-glow_2s_ease-in-out_infinite]" : ""}
+              `}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-5 h-5 mr-2" />
+              )}
+              {isGenerating ? "Generating..." : "Generate"}
+            </Button>
           </div>
         </main>
 

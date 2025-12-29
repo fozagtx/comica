@@ -60,8 +60,15 @@ export async function POST(request: NextRequest) {
       response_format: "url",
     });
 
-    const imageUrl = response.data[0]?.url;
-    const revisedPrompt = response.data[0]?.revised_prompt;
+    if (!response.data || response.data.length === 0) {
+      return NextResponse.json(
+        { error: "No image data returned" },
+        { status: 500 }
+      );
+    }
+
+    const imageUrl = response.data[0].url;
+    const revisedPrompt = response.data[0].revised_prompt;
 
     if (!imageUrl) {
       return NextResponse.json(

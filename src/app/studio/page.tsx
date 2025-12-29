@@ -1,472 +1,251 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import ReactFlow, {
-  Node,
-  Edge,
-  Controls,
-  Background,
-  BackgroundVariant,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Connection,
-  NodeTypes,
-  Handle,
-  Position,
-} from "reactflow";
-import "reactflow/dist/style.css";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Zap, Download, Sparkles, Loader2, ImageIcon, Plus, X, Send, Wifi, WifiOff } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Sparkles,
+  Mic,
+  Wand2,
+  Users,
+  Palette,
+  RefreshCw,
+  Pencil,
+  AlignLeft,
+  BarChart3,
+  MessageCircle,
+  Hexagon,
+  Clock,
+  Zap,
+} from "lucide-react";
 
-// Input Node Component
-function InputNode({ data }: { data: { onSubmit: (prompt: string, dialogue?: string) => void } }) {
-  const [prompt, setPrompt] = useState("");
-  const [dialogue, setDialogue] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!prompt.trim()) return;
-    setIsSubmitting(true);
-    await data.onSubmit(prompt, dialogue);
-    setIsSubmitting(false);
-    setPrompt("");
-    setDialogue("");
-  };
-
-  return (
-    <div className="bg-zinc-900/80 backdrop-blur-xl border border-white/20 rounded-2xl p-4 w-[380px] max-w-[90vw] shadow-[0_8px_32px_rgba(255,255,255,0.1)]">
-      <div className="flex flex-col gap-3">
-        <Input
-          placeholder="Describe your comic scene..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="bg-white/5 border-white/20 rounded-xl text-white placeholder:text-white/40 font-interface h-10 focus:border-white/40 focus:ring-white/20"
-        />
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs">💬</div>
-            <Input
-              placeholder="Character dialogue (optional)..."
-              value={dialogue}
-              onChange={(e) => setDialogue(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !isSubmitting && prompt.trim() && handleSubmit()}
-              className="pl-8 bg-white/5 border-white/20 rounded-xl text-white placeholder:text-white/40 font-interface h-9 text-sm focus:border-white/40 focus:ring-white/20"
-            />
-          </div>
-          <Button
-            onClick={handleSubmit}
-            disabled={!prompt.trim() || isSubmitting}
-            size="icon"
-            className="bg-white/10 hover:bg-white/20 text-white h-9 w-9 rounded-xl transition-all duration-300 hover:scale-[1.05] active:scale-[0.95] shrink-0 border border-white/20"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-      </div>
-      <Handle type="source" position={Position.Right} className="w-3 h-3 bg-white border-2 border-zinc-900" />
-    </div>
-  );
-}
-
-// Image Node Component
-function ImageNode({ data }: { data: { imageUrl: string; prompt: string; isGenerating?: boolean; onDownload: () => void; onDelete: () => void } }) {
-  const [showModal, setShowModal] = useState(false);
-
-  if (data.isGenerating) {
-    return (
-      <div className="bg-zinc-900/80 backdrop-blur-xl border border-amber-400/50 rounded-2xl p-3 w-[420px] max-w-[90vw] shadow-[0_8px_32px_rgba(255,180,32,0.15)]">
-        <Handle type="target" position={Position.Left} className="w-3 h-3 bg-amber-400 border-2 border-zinc-900" />
-        <div className="aspect-[16/9] bg-white/5 rounded-xl flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-          <p className="text-sm text-white/70 font-interface">Generating...</p>
-        </div>
-        <p className="text-xs text-white/50 font-interface mt-2 line-clamp-1">{data.prompt}</p>
-        <Handle type="source" position={Position.Right} className="w-3 h-3 bg-amber-400 border-2 border-zinc-900" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div 
-        className="bg-zinc-900/80 backdrop-blur-xl border border-white/20 hover:border-white/40 rounded-2xl p-3 w-[420px] max-w-[90vw] shadow-[0_8px_32px_rgba(255,255,255,0.1)] transition-all duration-300 group"
-        onMouseEnter={() => data.imageUrl && setShowModal(true)}
-        onMouseLeave={() => setShowModal(false)}
-      >
-        <Handle type="target" position={Position.Left} className="w-3 h-3 bg-white border-2 border-zinc-900" />
-        <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-2">
-          <Image
-            src={data.imageUrl}
-            alt={data.prompt}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-            <Button
-              size="sm"
-              onClick={data.onDownload}
-              className="bg-white/10 hover:bg-white/20 text-white h-8 px-3 rounded-xl border border-white/20"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={data.onDelete}
-              className="h-8 w-8 p-0 rounded-xl"
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-        <p className="text-xs text-white/60 font-interface line-clamp-1">{data.prompt}</p>
-        <Handle type="source" position={Position.Right} className="w-3 h-3 bg-white border-2 border-zinc-900" />
-      </div>
-
-      {/* Full Image Modal on Hover */}
-      {showModal && data.imageUrl && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
-          onMouseEnter={() => setShowModal(true)}
-          onMouseLeave={() => setShowModal(false)}
-        >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" />
-          <div className="relative max-w-[90vw] max-h-[85vh] animate-[scaleIn_0.3s_ease-out]">
-            <div className="relative rounded-2xl overflow-hidden border-4 border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-              <Image
-                src={data.imageUrl}
-                alt={data.prompt}
-                width={1280}
-                height={720}
-                className="object-contain bg-zinc-900 max-h-[75vh] w-auto"
-              />
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4 rounded-b-2xl">
-              <p className="text-white font-interface text-sm">{data.prompt}</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-// Placeholder Node for adding more
-function AddNode({ data }: { data: { onClick: () => void } }) {
-  return (
-    <div
-      onClick={data.onClick}
-      className="bg-zinc-900/60 backdrop-blur-xl border border-dashed border-white/20 hover:border-white/40 rounded-2xl p-4 w-[420px] max-w-[90vw] aspect-[16/9] flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-300 hover:bg-zinc-800/60 group shadow-[0_8px_32px_rgba(255,255,255,0.05)]"
-    >
-      <Handle type="target" position={Position.Left} className="w-3 h-3 bg-white/50 border-2 border-zinc-900" />
-      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-300">
-        <Plus className="w-6 h-6 text-white/50 group-hover:text-white transition-colors duration-300" />
-      </div>
-      <p className="text-sm text-white/50 font-interface group-hover:text-white transition-colors duration-300">Add Panel</p>
-    </div>
-  );
-}
+type TabType = "prompt" | "recreate" | "edit" | "title" | "analyze";
 
 export default function StudioPage() {
-  const [isOnline, setIsOnline] = useState(true);
-
-  // Online/offline detection
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsOnline(navigator.onLine);
-      const handleOnline = () => setIsOnline(true);
-      const handleOffline = () => setIsOnline(false);
-      window.addEventListener("online", handleOnline);
-      window.addEventListener("offline", handleOffline);
-      return () => {
-        window.removeEventListener("online", handleOnline);
-        window.removeEventListener("offline", handleOffline);
-      };
-    }
-  }, []);
-
-  const nodeTypes: NodeTypes = useMemo(
-    () => ({
-      inputNode: InputNode,
-      imageNode: ImageNode,
-      addNode: AddNode,
-    }),
-    []
+  const [activeTab, setActiveTab] = useState<TabType>("prompt");
+  const [prompt, setPrompt] = useState(
+    'A skeleton holding a smartphone, a melting brain dripping green slime, & the bold text "BRAIN ROT." in a neon, glitchy style'
   );
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [credits] = useState(40);
 
-  const initialNodes: Node[] = [
-    {
-      id: "input-1",
-      type: "inputNode",
-      position: { x: 100, y: 200 },
-      data: {
-        onSubmit: async (prompt: string, dialogue?: string) => {
-          await handleGeneratePanel(prompt, dialogue);
-        },
-      },
-    },
+  const tabs = [
+    { id: "prompt" as TabType, label: "Prompt", icon: Sparkles },
+    { id: "recreate" as TabType, label: "Recreate", icon: RefreshCw },
+    { id: "edit" as TabType, label: "Edit", icon: Pencil },
+    { id: "title" as TabType, label: "Title", icon: AlignLeft },
+    { id: "analyze" as TabType, label: "Analyze", icon: BarChart3, isNew: true },
   ];
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const handleGenerate = async () => {
+    if (!prompt.trim() || isGenerating) return;
+    setIsGenerating(true);
 
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
-
-  const handleGeneratePanel = useCallback(
-    async (prompt: string, dialogue?: string) => {
-      const generatingNodeId = `generating-${Date.now()}`;
-      const imageNodes = nodes.filter((n) => n.type === "imageNode" || n.type === "addNode");
-      const lastNode = imageNodes.length > 0 ? imageNodes[imageNodes.length - 1] : nodes.find((n) => n.id === "input-1");
-      
-      const newX = lastNode ? lastNode.position.x + 470 : 550;
-      const newY = lastNode ? lastNode.position.y : 200;
-
-      // Add generating node
-      const generatingNode: Node = {
-        id: generatingNodeId,
-        type: "imageNode",
-        position: { x: newX, y: newY },
-        data: {
-          imageUrl: "",
-          prompt,
-          isGenerating: true,
-          onDownload: () => {},
-          onDelete: () => {},
-        },
-      };
-
-      setNodes((nds) => [...nds.filter((n) => n.type !== "addNode"), generatingNode]);
-
-      // Add edge from input or last image
-      const sourceId = imageNodes.length > 0 ? imageNodes[imageNodes.length - 1].id : "input-1";
-      if (sourceId !== generatingNodeId) {
-        setEdges((eds) => [
-          ...eds,
-          {
-            id: `e-${sourceId}-${generatingNodeId}`,
-            source: sourceId,
-            target: generatingNodeId,
-            animated: true,
-            type: "smoothstep",
-            style: { stroke: "rgba(255, 255, 255, 0.4)", strokeWidth: 1.5 },
-          },
-        ]);
-      }
-
-      // Call the API to generate the image
-      let imageUrl = "";
-      try {
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, dialogue, orientation: "landscape" }),
-        });
-        const data = await response.json();
-        console.log("API Response:", data);
-        if (data.success && data.imageUrl) {
-          imageUrl = data.imageUrl;
-        } else {
-          console.error("API failed:", data.error || data);
-          // Remove the generating node on failure
-          setNodes((nds) => nds.filter((n) => n.id !== generatingNodeId));
-          return; // Exit without creating a node
-        }
-      } catch (error) {
-        console.error("Generation failed:", error);
-        // Remove the generating node on failure
-        setNodes((nds) => nds.filter((n) => n.id !== generatingNodeId));
-        return; // Exit without creating a node
-      }
-
-      const finalNodeId = `image-${Date.now()}`;
-
-      // Replace generating node with final image node
-      setNodes((nds) =>
-        nds.map((n) =>
-          n.id === generatingNodeId
-            ? {
-                ...n,
-                id: finalNodeId,
-                data: {
-                  imageUrl,
-                  prompt,
-                  isGenerating: false,
-                  onDownload: () => handleDownload(imageUrl, prompt),
-                  onDelete: () => handleDeleteNode(finalNodeId),
-                },
-              }
-            : n
-        )
-      );
-
-      // Update edge
-      setEdges((eds) =>
-        eds.map((e) =>
-          e.target === generatingNodeId
-            ? { ...e, target: finalNodeId, animated: false, type: "smoothstep", style: { stroke: "rgba(255, 255, 255, 0.4)", strokeWidth: 1.5 } }
-            : e
-        )
-      );
-
-      // Add "Add" node
-      const addNodeId = `add-${Date.now()}`;
-      setNodes((nds) => [
-        ...nds,
-        {
-          id: addNodeId,
-          type: "addNode",
-          position: { x: newX + 470, y: newY },
-          data: {
-            onClick: () => scrollToInput(),
-          },
-        },
-      ]);
-
-      setEdges((eds) => [
-        ...eds,
-        {
-          id: `e-${finalNodeId}-${addNodeId}`,
-          source: finalNodeId,
-          target: addNodeId,
-          type: "smoothstep",
-          style: { stroke: "rgba(255, 255, 255, 0.25)", strokeWidth: 1.5, strokeDasharray: "5,5" },
-        },
-      ]);
-    },
-    [nodes, setNodes, setEdges]
-  );
-
-  const handleDownload = async (imageUrl: string, prompt: string) => {
     try {
-      // Try fetching with cors mode
-      const response = await fetch(imageUrl, { mode: 'cors' });
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `comic-panel-${prompt.slice(0, 20).replace(/\s+/g, "-")}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      } else {
-        // Fallback: open image in new tab for manual save
-        window.open(imageUrl, '_blank');
-      }
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, orientation: "landscape" }),
+      });
+      const data = await response.json();
+      console.log("Generated:", data);
     } catch (error) {
-      console.error("Download failed, opening in new tab:", error);
-      // Fallback: open image in new tab for manual save
-      window.open(imageUrl, '_blank');
-    }
-  };
-
-  const handleDeleteNode = useCallback(
-    (nodeId: string) => {
-      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
-      setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
-    },
-    [setNodes, setEdges]
-  );
-
-  const scrollToInput = () => {
-    // Focus back to input area
-    const inputNode = document.querySelector('[data-id="input-1"]');
-    if (inputNode) {
-      inputNode.scrollIntoView({ behavior: "smooth", block: "center" });
+      console.error("Generation failed:", error);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   return (
-    <div className="h-screen bg-background noise-overlay flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50 shrink-0">
-        <div className="max-w-[1800px] mx-auto px-4 py-2 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-xl bg-foreground flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <Zap className="w-4 h-4 text-background" />
-            </div>
-            <div>
-              <h1 className="font-display text-lg text-foreground tracking-tight transition-colors duration-300 group-hover:text-foreground/80">
-                ComicFlow
-              </h1>
-              <p className="text-[10px] text-muted-foreground font-interface leading-none">
-                Narrative Comic Creation Studio
-              </p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-4">
-            <button
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-interface transition-all duration-300 ${
-                isOnline 
-                  ? "bg-green-500/10 text-green-400 border border-green-500/20" 
-                  : "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}
-            >
-              {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              {isOnline ? "Online" : "Offline"}
-            </button>
-            <div className="text-xs text-muted-foreground font-interface">
-              <span className="text-foreground font-semibold">{nodes.filter((n) => n.type === "imageNode" && !n.data.isGenerating).length}</span> panels created
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-dotted-grid" />
+      <div className="absolute inset-0 bg-glow-green pointer-events-none" />
+      <div className="absolute inset-0 bg-vignette pointer-events-none" />
 
-      {/* ReactFlow Canvas */}
-      <div className="flex-1 relative">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.5 }}
-          className="bg-background"
-          proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{
-            style: { stroke: "rgba(255, 255, 255, 0.4)", strokeWidth: 1.5 },
-            type: "smoothstep",
-          }}
-        >
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1}
-            color="hsl(var(--border))"
-          />
-          <Controls className="bg-card border border-border rounded-xl overflow-hidden" />
-        </ReactFlow>
-
-        {/* Instructions overlay */}
-        {nodes.filter((n) => n.type === "imageNode").length === 0 && (
-          <div className="absolute top-4 left-4 bg-card/90 backdrop-blur-sm border border-border rounded-2xl px-6 py-4 shadow-xl animate-[fadeInUp_0.6s_ease-out]">
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Top Navigation Bar */}
+        <header className="sticky top-0 z-50 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            {/* Left - Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-foreground" />
+              <div className="w-9 h-9 bg-[#0F1111] border border-[#1E1E1E] rounded-lg flex items-center justify-center">
+                <Hexagon className="w-5 h-5 text-[#22F2B1]" strokeWidth={1.5} />
               </div>
-              <div>
-                <p className="text-sm font-interface text-foreground font-medium">Enter a story prompt to generate your first comic panel</p>
-                <p className="text-xs text-muted-foreground font-interface">Panels will appear as connected nodes in the flow</p>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#22F2B1]">Essential</span>
+                <Badge
+                  variant="outline"
+                  className="bg-transparent border-[#16C79A]/30 text-[#9CA3AF] text-xs px-2 py-0.5 font-normal"
+                >
+                  Free Trial
+                </Badge>
               </div>
             </div>
+
+            {/* Center - Upgrade Alert */}
+            <div className="hidden md:flex items-center gap-3 bg-[#0F1111] border border-[#1E1E1E] rounded-full px-4 py-2">
+              <Clock className="w-4 h-4 text-[#9CA3AF]" />
+              <span className="text-sm text-[#E5E7EB]">
+                Skip Trial & Unlock All Credits
+              </span>
+              <Button
+                size="sm"
+                className="bg-[#F43F5E] hover:bg-[#E11D48] text-white text-xs font-semibold px-4 py-1 h-7 rounded-full"
+              >
+                Upgrade
+              </Button>
+            </div>
+
+            {/* Right - Credits */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-[#22F2B1]/20 flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-[#22F2B1]" />
+              </div>
+              <span className="text-sm">
+                <span className="font-semibold text-[#E5E7EB]">{credits}</span>
+                <span className="text-[#9CA3AF]"> Credits</span>
+              </span>
+              <span className="text-xs text-[#6B7280] hidden sm:inline">
+                left before trial ends
+              </span>
+            </div>
           </div>
-        )}
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+          <div className="w-full max-w-2xl">
+            {/* Get Started Title & Tabs Row */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-[#22F2B1] font-medium text-sm">Get Started</h2>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
+                        transition-all duration-200
+                        ${
+                          isActive
+                            ? "bg-[#22F2B1] text-[#0A0A0A] tab-active-glow"
+                            : "bg-transparent border border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB]"
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                      {tab.isNew && (
+                        <Badge className="absolute -top-2 -right-1 bg-[#22F2B1] text-[#0A0A0A] text-[10px] px-1.5 py-0 font-semibold">
+                          NEW
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Prompt Input Card */}
+            <div className="bg-[#0F1111] border border-[#1E1E1E] rounded-2xl p-4">
+              {/* Textarea */}
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe what you want to create..."
+                className="
+                  min-h-[120px] bg-transparent border-none resize-none
+                  text-[#E5E7EB] placeholder:text-[#6B7280]
+                  focus-visible:ring-0 focus-visible:ring-offset-0
+                  text-base leading-relaxed
+                "
+              />
+
+              {/* Footer Controls */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#1E1E1E]">
+                {/* Left - Personas & Styles */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Personas
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
+                  >
+                    <Palette className="w-4 h-4 mr-2" />
+                    Styles
+                  </Button>
+                </div>
+
+                {/* Right - Mic & Enhance */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="bg-transparent border-[#1E1E1E] text-[#6B7280] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full w-9 h-9"
+                  >
+                    <Mic className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent border-[#1E1E1E] text-[#6B7280] hover:border-[#3E3E3E] hover:text-[#E5E7EB] hover:bg-[#1E1E1E] rounded-full px-4 h-9"
+                  >
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Enhance Prompt
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || isGenerating}
+                className={`
+                  bg-[#22F2B1] hover:bg-[#1AD9A0] text-[#0A0A0A] font-semibold
+                  rounded-full px-8 py-3 h-12 text-base
+                  transition-all duration-300
+                  hover:scale-105 active:scale-95
+                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                  ${!isGenerating && prompt.trim() ? "glow-green-strong animate-[pulse-glow_2s_ease-in-out_infinite]" : ""}
+                `}
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                {isGenerating ? "Generating..." : "Generate"}
+              </Button>
+            </div>
+          </div>
+        </main>
+
+        {/* Floating Help Tab - Right Side */}
+        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50">
+          <button className="bg-[#22F2B1] text-[#0A0A0A] font-medium text-sm px-2 py-4 rounded-l-lg hover:bg-[#1AD9A0] transition-colors writing-mode-vertical">
+            <span className="transform rotate-180" style={{ writingMode: "vertical-rl" }}>
+              Can we help you?
+            </span>
+          </button>
+        </div>
+
+        {/* Floating Chat Button - Bottom Right */}
+        <button className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#0F1111] border border-[#1E1E1E] rounded-full flex items-center justify-center hover:border-[#3E3E3E] transition-all duration-200 hover:scale-105 shadow-lg">
+          <MessageCircle className="w-6 h-6 text-[#9CA3AF]" />
+        </button>
       </div>
     </div>
   );

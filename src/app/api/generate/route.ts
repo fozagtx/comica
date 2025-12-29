@@ -4,6 +4,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const userPrompt = body?.prompt;
+    const resolution = body?.resolution || "720p";
+
+    console.log("Received prompt:", userPrompt);
 
     if (!userPrompt || typeof userPrompt !== "string" || userPrompt.trim() === "") {
       return NextResponse.json(
@@ -12,22 +15,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock image generation - returns a placeholder image
-    const placeholderImages = [
-      "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=1024&h=1024&fit=crop",
-      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1024&h=1024&fit=crop",
-      "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=1024&h=1024&fit=crop",
-      "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1024&h=1024&fit=crop",
-    ];
+    const apiKey = process.env.DECART_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "DECART_API_KEY is not configured" },
+        { status: 500 }
+      );
+    }
 
-    const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
+    const formData = new FormData();
+    formData.append("prompt", userPrompt.trim());
+    formData.append("resolution", resolution);
+
+    const response = await fetch("https://api.decart.ai/v1/generate/lucy-pro-t2i", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Decart API error:", response.status, errorText);
+      return NextResponse.json(
+        { error: `API error: ${response.status}`, details: errorText },
+        { status: response.status }
+      );
+    }
+
+    const imageBuffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString("base64");
+    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+
+    console.log("Image generated successfully, size:", imageBuffer.byteLength);
 
     return NextResponse.json({
       success: true,
-      imageUrl: randomImage,
-      revisedPrompt: userPrompt.trim(),
+      imageUrl: imageUrl,
     });
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Generation error:", error);
     return NextResponse.json(
       { error: "Failed to generate image", details: String(error) },

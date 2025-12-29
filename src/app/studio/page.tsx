@@ -30,18 +30,14 @@ type ImageStyle = "vivid" | "natural";
 interface GeneratedImage {
   url: string;
   prompt: string;
-  revisedPrompt?: string;
   timestamp: number;
 }
 
 export default function StudioPage() {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isEnhancing, setIsEnhancing] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
-
-  // Image generation options
   const [imageSize, setImageSize] = useState<ImageSize>("1024x1024");
   const [imageQuality, setImageQuality] = useState<ImageQuality>("standard");
   const [imageStyle, setImageStyle] = useState<ImageStyle>("vivid");
@@ -52,30 +48,6 @@ export default function StudioPage() {
     { value: "1024x1792" as ImageSize, label: "Portrait", icon: RectangleVertical },
   ];
 
-  const handleEnhancePrompt = async () => {
-    if (!prompt.trim() || isEnhancing) return;
-    setIsEnhancing(true);
-
-    try {
-      const response = await fetch("/api/enhance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await response.json();
-
-      if (data.success && data.enhancedPrompt) {
-        setPrompt(data.enhancedPrompt);
-      } else {
-        console.error("Enhancement failed:", data.error);
-      }
-    } catch (error) {
-      console.error("Enhancement failed:", error);
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
     setIsGenerating(true);
@@ -84,12 +56,7 @@ export default function StudioPage() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          size: imageSize,
-          quality: imageQuality,
-          style: imageStyle,
-        }),
+        body: JSON.stringify({ prompt }),
       });
       const data = await response.json();
 
@@ -97,7 +64,6 @@ export default function StudioPage() {
         const newImage: GeneratedImage = {
           url: data.imageUrl,
           prompt: prompt,
-          revisedPrompt: data.revisedPrompt,
           timestamp: Date.now(),
         };
         setGeneratedImages((prev) => [newImage, ...prev]);
@@ -114,19 +80,14 @@ export default function StudioPage() {
 
   const handleDownload = async (imageUrl: string, promptText: string) => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `compikzel-${promptText.slice(0, 30).replace(/\s+/g, "-")}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const link = document.createElement("a");
+      link.href = imageUrl;
+      link.download = `compikzel-${promptText.slice(0, 30).replace(/\s+/g, "-")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error("Download failed:", error);
-      window.open(imageUrl, "_blank");
     }
   };
 
@@ -300,16 +261,11 @@ export default function StudioPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleEnhancePrompt}
-                    disabled={!prompt.trim() || isEnhancing}
+                    disabled={!prompt.trim()}
                     className="bg-transparent border-[#1E1E1E] text-[#9CA3AF] hover:border-[#22F2B1] hover:text-[#22F2B1] hover:bg-[#22F2B1]/10 rounded-full px-4 h-9 disabled:opacity-50"
                   >
-                    {isEnhancing ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Wand2 className="w-4 h-4 mr-2" />
-                    )}
-                    {isEnhancing ? "Enhancing..." : "Enhance Prompt"}
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Enhance Prompt
                   </Button>
                 </div>
               </div>
@@ -337,11 +293,6 @@ export default function StudioPage() {
                 {isGenerating ? "Generating..." : "Generate"}
               </Button>
             </div>
-
-            {/* DALL-E 3 Badge */}
-            <p className="text-center text-xs text-[#6B7280] mt-3">
-              Powered by OpenAI DALL-E 3
-            </p>
           </div>
 
           {/* Right Panel - Generated Images */}
@@ -376,7 +327,7 @@ export default function StudioPage() {
                 </div>
                 <div className="p-4 border-t border-[#1E1E1E]">
                   <p className="text-xs text-[#9CA3AF] line-clamp-2 mb-3">
-                    {selectedImage.revisedPrompt || selectedImage.prompt}
+                    {selectedImage.prompt}
                   </p>
                   <Button
                     size="sm"

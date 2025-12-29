@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
-// Comic style system prompt to ensure consistent comic book aesthetic
-const COMIC_STYLE_PREFIX = `Comic book style illustration, bold ink outlines, vibrant colors, halftone dot shading, dynamic composition, professional comic panel art, speech bubbles with cloud-like borders for dialogue, expressive characters, dramatic lighting, manga/western comic hybrid style. `;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const userPrompt = body?.prompt;
-    const dialogue = body?.dialogue; // Optional dialogue for speech bubble
-    const resolution = body?.resolution || "720p";
+    const size = body?.size || "1024x1024"; // Options: 1024x1024, 1792x1024, 1024x1792
+    const quality = body?.quality || "standard"; // Options: standard, hd
+    const style = body?.style || "vivid"; // Options: vivid, natural
 
     console.log("Received prompt:", userPrompt);
-    console.log("Dialogue:", dialogue);
+    console.log("Size:", size, "Quality:", quality, "Style:", style);
 
     if (!userPrompt || typeof userPrompt !== "string" || userPrompt.trim() === "") {
       return NextResponse.json(
@@ -20,58 +23,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.DECART_API_KEY;
-    if (!apiKey) {
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: "DECART_API_KEY is not configured" },
+        { error: "OpenAI API key is not configured" },
         { status: 500 }
       );
     }
 
-    // Build the full prompt with comic style prefix and optional dialogue
-    let fullPrompt = COMIC_STYLE_PREFIX + userPrompt.trim();
-    
-    if (dialogue && dialogue.trim()) {
-      fullPrompt += `. Character has a speech bubble with cloud-like puffy border containing the text: "${dialogue.trim()}"`;
-    }
+    // Validate size option
+    const validSizes = ["1024x1024", "1792x1024", "1024x1792"] as const;
+    const selectedSize = validSizes.includes(size as typeof validSizes[number])
+      ? size as typeof validSizes[number]
+      : "1024x1024";
 
-    console.log("Full prompt to Decart:", fullPrompt);
+    // Validate quality option
+    const validQualities = ["standard", "hd"] as const;
+    const selectedQuality = validQualities.includes(quality as typeof validQualities[number])
+      ? quality as typeof validQualities[number]
+      : "standard";
 
-    // Decart API uses FormData, not JSON!
-    const formData = new FormData();
-    formData.append("prompt", fullPrompt);
-    formData.append("resolution", resolution);
+    // Validate style option
+    const validStyles = ["vivid", "natural"] as const;
+    const selectedStyle = validStyles.includes(style as typeof validStyles[number])
+      ? style as typeof validStyles[number]
+      : "vivid";
 
-    const response = await fetch("https://api.decart.ai/v1/generate/lucy-pro-t2i", {
-      method: "POST",
-      headers: {
-        "X-API-KEY": apiKey,
-      },
-      body: formData,
+    console.log("Generating image with DALL-E 3...");
+
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: userPrompt.trim(),
+      n: 1,
+      size: selectedSize,
+      quality: selectedQuality,
+      style: selectedStyle,
+      response_format: "url",
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Decart API error:", response.status, errorText);
+    const imageUrl = response.data[0]?.url;
+    const revisedPrompt = response.data[0]?.revised_prompt;
+
+    if (!imageUrl) {
       return NextResponse.json(
-        { error: `API error: ${response.status}`, details: errorText },
-        { status: response.status }
+        { error: "No image was generated" },
+        { status: 500 }
       );
     }
 
-    // The API returns the image directly as binary data
-    const imageBuffer = await response.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString("base64");
-    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-
-    console.log("Image generated successfully, size:", imageBuffer.byteLength);
+    console.log("Image generated successfully");
+    console.log("Revised prompt:", revisedPrompt);
 
     return NextResponse.json({
       success: true,
       imageUrl: imageUrl,
+      revisedPrompt: revisedPrompt,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Generation error:", error);
+
+    // Handle OpenAI-specific errors
+    if (error instanceof OpenAI.APIError) {
+      return NextResponse.json(
+        {
+          error: "OpenAI API error",
+          details: error.message,
+          code: error.code
+        },
+        { status: error.status || 500 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to generate image", details: String(error) },
       { status: 500 }
